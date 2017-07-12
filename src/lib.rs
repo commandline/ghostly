@@ -15,6 +15,9 @@ use piston_window::*;
 use object::Object;
 use sprite::*;
 
+// TODO move this into the player object
+const MV_FACT: f64 = 2500.0;
+
 pub struct Game {
     scene: Scene<Texture<Resources>>,
     player: Object,
@@ -42,16 +45,16 @@ impl Game {
         self.scene.event(e);
 
         if self.up_d {
-            self.player.mov(&mut self.scene, 0.0, -1500.0 * upd.dt);
+            self.player.mov(&mut self.scene, 0.0, -MV_FACT * upd.dt);
         }
         if self.down_d {
-            self.player.mov(&mut self.scene, 0.0, 1500.0 * upd.dt);
+            self.player.mov(&mut self.scene, 0.0, MV_FACT * upd.dt);
         }
         if self.left_d {
-            self.player.mov(&mut self.scene, -1500.0 * upd.dt, 0.0);
+            self.player.mov(&mut self.scene, -MV_FACT * upd.dt, 0.0);
         }
         if self.right_d {
-            self.player.mov(&mut self.scene, 1500.0 * upd.dt, 0.0);
+            self.player.mov(&mut self.scene, MV_FACT * upd.dt, 0.0);
         }
     }
 
@@ -59,22 +62,39 @@ impl Game {
         let assets = find_folder::Search::ParentsThenKids(3, 3)
             .for_folder("assets")
             .unwrap();
+        let ref font = assets.join("Fresca-Regular.ttf");
+        let factory = w.factory.clone();
+        let mut glyphs = Glyphs::new(font, factory).unwrap();
+
         let image = Image::new().rect(square(0.0, 0.0, 640.0));
         let bg = Texture::from_path(&mut w.factory,
                                        assets.join("bg.png"),
                                        Flip::None,
                                        &TextureSettings::new()).unwrap();
         w.draw_2d(e, |c, g| {
+            let transform = c.transform.trans(10.0, 100.0);
+
             clear([1.0, 1.0, 1.0, 1.0], g);
             for number in 0..100 {
                 let x: f64 = (number % 10 * 64).into();
                 let y: f64 = (number / 10 * 64).into();
                 image.draw(&bg, &Default::default(), c.transform.trans(x, y).zoom(0.1), g);
             }
+            if let Some(player_sprite) = self.scene.child(self.player.sprite_id) {
+                let (x, y) = player_sprite.get_position();
+                text::Text::new_color([0.0, 1.0, 0.0, 1.0], 32).draw(
+                    &format!("x: {}, y: {}", x.trunc(), y.trunc()),
+                    &mut glyphs,
+                    &c.draw_state,
+                    transform, g
+                );
+            }
+
             self.scene.draw(c.transform, g);
         });
     }
 
+    // TODO use an enum to track requested movement direction
     pub fn on_input(&mut self, inp: Input) {
         match inp {
             Input::Press(but) => {
