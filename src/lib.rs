@@ -3,6 +3,7 @@ extern crate find_folder;
 extern crate gfx_device_gl;
 extern crate graphics;
 extern crate piston_window;
+extern crate rand;
 extern crate sprite;
 extern crate uuid;
 
@@ -12,50 +13,33 @@ use gfx_device_gl::Resources;
 use graphics::Image;
 use graphics::rectangle::square;
 use piston_window::*;
-use mobs::Hero;
+use mobs::{Hero, Star};
 use sprite::*;
-
-// TODO move this into the player object
-const MV_FACT: f64 = 2500.0;
 
 pub struct Game {
     scene: Scene<Texture<Resources>>,
     player: Hero,
-    up_d: bool,
-    down_d: bool,
-    left_d: bool,
-    right_d: bool,
+    star: Star,
 }
 
 impl Game {
     pub fn new(w: &mut PistonWindow) -> Game {
         let mut scene = Scene::new();
+        let star = Star::new(w, &mut scene);
         let player = Hero::new(w, &mut scene);
         Game {
             scene: scene,
             player: player,
-            up_d: false,
-            down_d: false,
-            left_d: false,
-            right_d: false,
+            star: star,
         }
     }
 
-    pub fn on_update(&mut self, e: &Input, upd: UpdateArgs) {
+    pub fn on_update(&mut self, e: &Input, upd: UpdateArgs, w: &PistonWindow) {
         self.scene.event(e);
 
-        if self.up_d {
-            self.player.mov(&mut self.scene, 0.0, -MV_FACT * upd.dt);
-        }
-        if self.down_d {
-            self.player.mov(&mut self.scene, 0.0, MV_FACT * upd.dt);
-        }
-        if self.left_d {
-            self.player.mov(&mut self.scene, -MV_FACT * upd.dt, 0.0);
-        }
-        if self.right_d {
-            self.player.mov(&mut self.scene, MV_FACT * upd.dt, 0.0);
-        }
+        self.star.mov(w, &mut self.scene, upd.dt);
+
+        self.player.mov(w, &mut self.scene, upd.dt);
     }
 
     pub fn on_draw(&mut self, e: &Input, _: RenderArgs, w: &mut PistonWindow) {
@@ -72,23 +56,26 @@ impl Game {
                                        Flip::None,
                                        &TextureSettings::new()).unwrap();
         w.draw_2d(e, |c, g| {
-            let transform = c.transform.trans(10.0, 100.0);
-
             clear([1.0, 1.0, 1.0, 1.0], g);
             for number in 0..100 {
                 let x: f64 = (number % 10 * 64).into();
                 let y: f64 = (number / 10 * 64).into();
                 image.draw(&bg, &Default::default(), c.transform.trans(x, y).zoom(0.1), g);
             }
-            if let Some(player_sprite) = self.scene.child(self.player.sprite_id) {
-                let (x, y) = player_sprite.get_position();
-                text::Text::new_color([0.0, 1.0, 0.0, 1.0], 32).draw(
-                    &format!("x: {}, y: {}", x.trunc(), y.trunc()),
-                    &mut glyphs,
-                    &c.draw_state,
-                    transform, g
-                );
-            }
+
+            text::Text::new_color([0.0, 1.0, 0.0, 1.0], 10).draw(
+                &format!("{} x: {}, y: {}", self.player.sprite_id, self.player.x.trunc(), self.player.y.trunc()),
+                &mut glyphs,
+                &c.draw_state,
+                c.transform.trans(10.0, 100.0), g
+            );
+
+            text::Text::new_color([0.0, 1.0, 0.0, 1.0], 10).draw(
+                &format!("{} x: {}, y: {}", self.star.sprite_id, self.star.x.trunc(), self.star.y.trunc()),
+                &mut glyphs,
+                &c.draw_state,
+                c.transform.trans(10.0, 110.0), g
+            );
 
             self.scene.draw(c.transform, g);
         });
@@ -100,16 +87,16 @@ impl Game {
             Input::Press(but) => {
                 match but {
                     Button::Keyboard(Key::Up) => {
-                        self.up_d = true;
+                        self.player.dir = (self.player.dir.0, -1.0);
                     }
                     Button::Keyboard(Key::Down) => {
-                        self.down_d = true;
+                        self.player.dir = (self.player.dir.0, 1.0);
                     }
                     Button::Keyboard(Key::Left) => {
-                        self.left_d = true;
+                        self.player.dir = (-1.0, self.player.dir.1);
                     }
                     Button::Keyboard(Key::Right) => {
-                        self.right_d = true;
+                        self.player.dir = (1.0, self.player.dir.1);
                     }
                     _ => {}
                 }
@@ -117,16 +104,16 @@ impl Game {
             Input::Release(but) => {
                 match but {
                     Button::Keyboard(Key::Up) => {
-                        self.up_d = false;
+                        self.player.dir = (self.player.dir.0, 0.0);
                     }
                     Button::Keyboard(Key::Down) => {
-                        self.down_d = false;
+                        self.player.dir = (self.player.dir.0, 0.0);
                     }
                     Button::Keyboard(Key::Left) => {
-                        self.left_d = false;
+                        self.player.dir = (0.0, self.player.dir.1);
                     }
                     Button::Keyboard(Key::Right) => {
-                        self.right_d = false;
+                        self.player.dir = (0.0, self.player.dir.1);
                     }
                     _ => {}
                 }

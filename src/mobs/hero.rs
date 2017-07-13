@@ -5,13 +5,15 @@ use piston_window::*;
 use sprite::*;
 use uuid::Uuid;
 use std::rc::Rc;
+use mobs::wrap;
 
-
-// TODO add size of player sprite for boundary checking
 pub struct Hero {
     pub sprite_id: Uuid,
+    pub dir: (f64, f64),
     pub x: f64,
     pub y: f64,
+    w: f64,
+    h: f64,
 }
 
 impl Hero {
@@ -26,43 +28,34 @@ impl Hero {
                                   .unwrap());
         let mut sprite = Sprite::from_texture(tex);
         sprite.set_position(320.0, 240.0);
+        let bounds = sprite.bounding_box();
         let sprite_id = scene.add_child(sprite);
         Hero {
             x: 320.0,
             y: 240.0,
+            w: bounds[2],
+            h: bounds[3],
+            dir: (0.0, 0.0),
             sprite_id: sprite_id,
         }
     }
 
-    pub fn mov(&mut self, scene: &mut Scene<Texture<Resources>>, input_x: f64, input_y: f64) {
+    pub fn mov(&mut self, w: &PistonWindow, scene: &mut Scene<Texture<Resources>>, dt: f64) {
         if let Some(sprite) = scene.child(self.sprite_id) {
             let (sprite_x, sprite_y) = sprite.get_position();
             self.x = sprite_x;
             self.y = sprite_y;
         }
-        let mut wrapped = false;
-        // TODO pass in window size
-        if self.x > 640.0 + 32.0 {
-            self.x = -32.0;
-            wrapped = true;
-        } else if self.x < -32.0 {
-            self.x = 640.0 + 32.0;
-            wrapped = true;
-        }
-        if self.y > 480.0 + 32.0 {
-            self.y = -32.0;
-            wrapped = true;
-        } else if self.y < -32.0 {
-            self.y = 480.0 + 32.0;
-            wrapped = true;
-        }
-        self.y += input_y;
+        let (wrapped, new_x, new_y) = wrap((w.size().width.into(), w.size().height.into()), (self.w, self.h), (self.x, self.y));
         if wrapped {
-            scene.stop_all(self.sprite_id);
+            self.x = new_x;
+            self.y = new_y;
             if let Some(ref mut sprite) = scene.child_mut(self.sprite_id) {
                 sprite.set_position(self.x, self.y);
             }
         }
-        scene.run(self.sprite_id, &Action(Ease(EaseFunction::CubicOut, Box::new(MoveBy(1.0, input_x, input_y)))));
+        let mov_x = self.dir.0 * 2.0;
+        let mov_y = self.dir.1 * 2.0;
+        scene.run(self.sprite_id, &Action(Ease(EaseFunction::CubicOut, Box::new(MoveBy(dt * 0.75, mov_x, mov_y)))));
     }
 }
