@@ -6,13 +6,13 @@ extern crate piston_window;
 extern crate sprite;
 extern crate uuid;
 
-mod object;
+mod mobs;
 
 use gfx_device_gl::Resources;
 use graphics::Image;
 use graphics::rectangle::square;
 use piston_window::*;
-use object::Object;
+use mobs::Hero;
 use sprite::*;
 
 // TODO move this into the player object
@@ -20,7 +20,7 @@ const MV_FACT: f64 = 2500.0;
 
 pub struct Game {
     scene: Scene<Texture<Resources>>,
-    player: Object,
+    player: Hero,
     up_d: bool,
     down_d: bool,
     left_d: bool,
@@ -30,7 +30,7 @@ pub struct Game {
 impl Game {
     pub fn new(w: &mut PistonWindow) -> Game {
         let mut scene = Scene::new();
-        let player = Object::new(w, &mut scene);
+        let player = Hero::new(w, &mut scene);
         Game {
             scene: scene,
             player: player,

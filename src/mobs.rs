@@ -8,14 +8,14 @@ use std::rc::Rc;
 
 
 // TODO add size of player sprite for boundary checking
-pub struct Object {
+pub struct Hero {
     pub sprite_id: Uuid,
     pub x: f64,
     pub y: f64,
 }
 
-impl Object {
-    pub fn new(w: &mut PistonWindow, scene: &mut Scene<Texture<Resources>>) -> Object {
+impl Hero {
+    pub fn new(w: &mut PistonWindow, scene: &mut Scene<Texture<Resources>>) -> Hero {
         let assets = find_folder::Search::ParentsThenKids(3, 3)
             .for_folder("assets")
             .unwrap();
@@ -27,7 +27,7 @@ impl Object {
         let mut sprite = Sprite::from_texture(tex);
         sprite.set_position(320.0, 240.0);
         let sprite_id = scene.add_child(sprite);
-        Object {
+        Hero {
             x: 320.0,
             y: 240.0,
             sprite_id: sprite_id,
