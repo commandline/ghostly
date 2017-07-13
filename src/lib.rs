@@ -21,32 +21,44 @@ use sprite::*;
 pub struct Game {
     scene: Scene<Texture<Resources>>,
     player: Hero,
-    star: Star,
+    stars: Vec<Star>,
     diag: bool,
+    victory: bool,
 }
 
 impl Game {
     pub fn new(w: &mut PistonWindow) -> Game {
         let mut scene = Scene::new();
-        let star = Star::new(w, &mut scene);
+        let mut stars: Vec<Star> = vec![];
+        for _ in 1..5 {
+            stars.push(Star::new(w, &mut scene));
+        }
         let player = Hero::new(w, &mut scene);
         Game {
             scene: scene,
             player: player,
-            star: star,
+            stars: stars,
             diag: false,
+            victory: false,
         }
     }
 
     pub fn on_update(&mut self, e: &Input, upd: UpdateArgs, w: &PistonWindow) {
         self.scene.event(e);
 
-        if !self.star.destroyed && self.player.collides(&self.star) {
-            self.star.destroy(&mut self.scene, upd.dt);
-            self.player.grow(&mut self.scene, upd.dt);
+        for mut star in &mut self.stars {
+            if !star.destroyed && self.player.collides(&star) {
+                star.destroy(&mut self.scene, upd.dt);
+                self.player.grow(&mut self.scene, upd.dt);
+            } else {
+                star.mov(w, &mut self.scene, upd.dt);
+            }
         }
 
-        self.star.mov(w, &mut self.scene, upd.dt);
+        if self.stars.iter().all(|star| star.destroyed) {
+            self.victory = true;
+            return;
+        }
 
         self.player.mov(w, &mut self.scene, upd.dt);
     }
@@ -72,9 +84,19 @@ impl Game {
                 image.draw(&bg, &Default::default(), c.transform.trans(x, y).zoom(0.1), g);
             }
 
+            if self.victory {
+                text::Text::new_color([0.0, 1.0, 0.0, 1.0], 24).draw(
+                    "Hurray! You win!",
+                    &mut glyphs,
+                    &c.draw_state,
+                    c.transform.trans(200.0, 240.0), g
+                );
+                return;
+            }
+
             if self.diag {
                 text::Text::new_color([0.0, 1.0, 0.0, 1.0], 10).draw(
-                    &format!("{} {}", self.player.diag(), self.star.diag()),
+                    &format!("{}", self.player.diag()),
                     &mut glyphs,
                     &c.draw_state,
                     c.transform.trans(10.0, 10.0), g

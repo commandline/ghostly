@@ -76,11 +76,6 @@ impl Star {
         scene.run(self.sprite_id, &Action(Ease(EaseFunction::CubicOut, Box::new(FadeOut(dt * 0.75)))));
         self.destroyed = true;
     }
-
-
-    pub fn diag(&self) -> String {
-        format!("{}: x {} / y {}", self.sprite_id, self.x.trunc(), self.y.trunc())
-    }
 }
 
 fn rand_dir() -> u32 {
