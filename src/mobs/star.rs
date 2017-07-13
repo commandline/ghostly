@@ -15,6 +15,7 @@ pub struct Star {
     pub y: f64,
     w: f64,
     h: f64,
+    dir: u32,
 }
 
 impl Star {
@@ -38,6 +39,7 @@ impl Star {
             w: bounds[2],
             h: bounds[3],
             sprite_id: sprite_id,
+            dir: rand_dir(),
         }
     }
 
@@ -55,8 +57,49 @@ impl Star {
                 sprite.set_position(self.x, self.y);
             }
         }
-        let mov_x = rand::random::<f64>() * 0.5;
-        let mov_y = rand::random::<f64>() * 0.5;
+        self.dir = rand_turn(self.dir);
+        let dir = lookup_dir(self.dir);
+        let mov_x = 2.0 * dir.0;
+        let mov_y = 2.0 * dir.1;
         scene.run(self.sprite_id, &Action(Ease(EaseFunction::CubicOut, Box::new(MoveBy(dt * 0.75, mov_x, mov_y)))));
+    }
+}
+
+fn rand_dir() -> u32 {
+    rand::random::<u32>() % 8
+}
+
+fn rand_turn(dir: u32) -> u32 {
+    let coin = rand::random::<i32>() % 10;
+    match coin {
+        -9 => {
+            if dir == 0 {
+                7
+            } else {
+                dir - 1
+            }
+        }
+        9 => {
+            if dir == 7 {
+                0
+            } else {
+                dir + 1
+            }
+        }
+        _ => dir,
+    }
+}
+
+fn lookup_dir(dir: u32) -> (f64, f64) {
+    match dir {
+        0 => (0.0, -1.0),
+        1 => (1.0, -1.0),
+        2 => (1.0, 0.0),
+        3 => (1.0, 1.0),
+        4 => (0.0, 1.0),
+        5 => (-1.0, 1.0),
+        6 => (-1.0, 0.0),
+        7 => (-1.0, -1.0),
+        _ => (0.0, 0.0),
     }
 }
