@@ -1,7 +1,7 @@
-# ghostly
-Ghostly adventure game inspired by Spirited Away
+# Susuwatari Game
+A simple 2D game inspired by the soot yokai in Tonari ni Totoro and Spirited Away. Written pretty much only to learn some game programming in rust.
 
 ## ToDo
-* [ ] Add level geometry
-* [ ] Constrain sprite movement to level geometry
-* [ ] Figure out side scrolling
+* [ ] Add background tiling.
+* [ ] Wrap sprite movement at the edges.
+* [ ] Add mobs.
