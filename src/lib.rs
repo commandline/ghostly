@@ -2,6 +2,8 @@ extern crate ai_behavior;
 extern crate find_folder;
 extern crate gfx_device_gl;
 extern crate graphics;
+extern crate nalgebra;
+extern crate ncollide;
 extern crate piston_window;
 extern crate rand;
 extern crate sprite;
@@ -20,6 +22,7 @@ pub struct Game {
     scene: Scene<Texture<Resources>>,
     player: Hero,
     star: Star,
+    diag: bool,
 }
 
 impl Game {
@@ -31,11 +34,17 @@ impl Game {
             scene: scene,
             player: player,
             star: star,
+            diag: false,
         }
     }
 
     pub fn on_update(&mut self, e: &Input, upd: UpdateArgs, w: &PistonWindow) {
         self.scene.event(e);
+
+        if !self.star.destroyed && self.player.collides(&self.star) {
+            self.star.destroy(&mut self.scene, upd.dt);
+            self.player.grow(&mut self.scene, upd.dt);
+        }
 
         self.star.mov(w, &mut self.scene, upd.dt);
 
@@ -63,19 +72,14 @@ impl Game {
                 image.draw(&bg, &Default::default(), c.transform.trans(x, y).zoom(0.1), g);
             }
 
-            text::Text::new_color([0.0, 1.0, 0.0, 1.0], 10).draw(
-                &format!("{} x: {}, y: {}", self.player.sprite_id, self.player.x.trunc(), self.player.y.trunc()),
-                &mut glyphs,
-                &c.draw_state,
-                c.transform.trans(10.0, 100.0), g
-            );
-
-            text::Text::new_color([0.0, 1.0, 0.0, 1.0], 10).draw(
-                &format!("{} x: {}, y: {}", self.star.sprite_id, self.star.x.trunc(), self.star.y.trunc()),
-                &mut glyphs,
-                &c.draw_state,
-                c.transform.trans(10.0, 110.0), g
-            );
+            if self.diag {
+                text::Text::new_color([0.0, 1.0, 0.0, 1.0], 10).draw(
+                    &format!("{} {}", self.player.diag(), self.star.diag()),
+                    &mut glyphs,
+                    &c.draw_state,
+                    c.transform.trans(10.0, 10.0), g
+                );
+            }
 
             self.scene.draw(c.transform, g);
         });
@@ -114,6 +118,9 @@ impl Game {
                     }
                     Button::Keyboard(Key::Right) => {
                         self.player.dir = (0.0, self.player.dir.1);
+                    }
+                    Button::Keyboard(Key::H) => {
+                        self.diag = !self.diag;
                     }
                     _ => {}
                 }

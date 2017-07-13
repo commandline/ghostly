@@ -2,12 +2,13 @@ use ai_behavior::Action;
 use find_folder;
 use gfx_device_gl::Resources;
 use piston_window::*;
+use ncollide::shape::Cuboid2;
+use nalgebra::Vector2;
 use sprite::*;
 use uuid::Uuid;
 use rand;
 use std::rc::Rc;
 use super::wrap;
-
 
 pub struct Star {
     pub sprite_id: Uuid,
@@ -16,6 +17,8 @@ pub struct Star {
     w: f64,
     h: f64,
     dir: u32,
+    pub collider: Cuboid2<f64>,
+    pub destroyed: bool,
 }
 
 impl Star {
@@ -40,10 +43,15 @@ impl Star {
             h: bounds[3],
             sprite_id: sprite_id,
             dir: rand_dir(),
+            collider: Cuboid2::new(Vector2::new(bounds[2], bounds[3])),
+            destroyed: false,
         }
     }
 
     pub fn mov(&mut self, w: &PistonWindow, scene: &mut Scene<Texture<Resources>>, dt: f64) {
+        if self.destroyed {
+            return;
+        }
         if let Some(sprite) = scene.child(self.sprite_id) {
             let (sprite_x, sprite_y) = sprite.get_position();
             self.x = sprite_x;
@@ -62,6 +70,16 @@ impl Star {
         let mov_x = 2.0 * dir.0;
         let mov_y = 2.0 * dir.1;
         scene.run(self.sprite_id, &Action(Ease(EaseFunction::CubicOut, Box::new(MoveBy(dt * 0.75, mov_x, mov_y)))));
+    }
+
+    pub fn destroy(&mut self, scene: &mut Scene<Texture<Resources>>, dt: f64) {
+        scene.run(self.sprite_id, &Action(Ease(EaseFunction::CubicOut, Box::new(FadeOut(dt * 0.75)))));
+        self.destroyed = true;
+    }
+
+
+    pub fn diag(&self) -> String {
+        format!("{}: x {} / y {}", self.sprite_id, self.x.trunc(), self.y.trunc())
     }
 }
 

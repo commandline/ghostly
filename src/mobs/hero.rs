@@ -2,10 +2,13 @@ use ai_behavior::Action;
 use find_folder;
 use gfx_device_gl::Resources;
 use piston_window::*;
+use ncollide::shape::Cuboid2;
+use ncollide::query::{proximity, Proximity};
+use nalgebra::{self, Isometry2, Vector2};
 use sprite::*;
 use uuid::Uuid;
 use std::rc::Rc;
-use mobs::wrap;
+use mobs::{wrap, Star};
 
 pub struct Hero {
     pub sprite_id: Uuid,
@@ -14,6 +17,7 @@ pub struct Hero {
     pub y: f64,
     w: f64,
     h: f64,
+    collider: Cuboid2<f64>,
 }
 
 impl Hero {
@@ -37,6 +41,7 @@ impl Hero {
             h: bounds[3],
             dir: (0.0, 0.0),
             sprite_id: sprite_id,
+            collider: Cuboid2::new(Vector2::new(bounds[2], bounds[3])),
         }
     }
 
@@ -57,5 +62,19 @@ impl Hero {
         let mov_x = self.dir.0 * 2.0;
         let mov_y = self.dir.1 * 2.0;
         scene.run(self.sprite_id, &Action(Ease(EaseFunction::CubicOut, Box::new(MoveBy(dt * 0.75, mov_x, mov_y)))));
+    }
+
+    pub fn grow(&mut self, scene: &mut Scene<Texture<Resources>>, dt: f64) {
+        scene.run(self.sprite_id, &Action(Ease(EaseFunction::ElasticInOut, Box::new(ScaleBy(dt * 5.0, 0.3, 0.3)))));
+    }
+
+    pub fn collides(&mut self, star: &Star) -> bool {
+        let star_pos = Isometry2::new(Vector2::new(star.x, star.y), nalgebra::zero());
+        let pos = Isometry2::new(Vector2::new(self.x, self.y), nalgebra::zero());
+        proximity(&star_pos, &star.collider, &pos, &self.collider, 0.0) == Proximity::Intersecting
+    }
+
+    pub fn diag(&self) -> String {
+        format!("{}: x {} / y {}", self.sprite_id, self.x.trunc(), self.y.trunc())
     }
 }
