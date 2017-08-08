@@ -71,7 +71,13 @@ impl Hero {
     }
 
     pub fn grow(&mut self, scene: &mut Scene<Texture<Resources>>, dt: f64) {
-        self.size += 1;
+        if let Some(sprite) = scene.child(self.sprite_id) {
+            self.size += 60;
+            let bounds = sprite.bounding_box();
+            self.w = bounds[2];
+            self.h = bounds[3];
+            self.collider = Cuboid2::new(Vector2::new(bounds[2], bounds[3]));
+        }
         scene.run(self.sprite_id,
                   &Action(Ease(EaseFunction::ElasticInOut,
                                Box::new(ScaleBy(dt * 5.0, 0.3, 0.3)))));
@@ -79,7 +85,13 @@ impl Hero {
 
     pub fn shrink(&mut self, scene: &mut Scene<Texture<Resources>>, dt: f64) {
         if self.size > 0 {
-            self.size -= 1;
+            if let Some(sprite) = scene.child(self.sprite_id) {
+                self.size -= 1;
+                let bounds = sprite.bounding_box();
+                self.w = bounds[2];
+                self.h = bounds[3];
+                self.collider = Cuboid2::new(Vector2::new(bounds[2], bounds[3]));
+            }
             scene.run(self.sprite_id,
                       &Action(Ease(EaseFunction::ElasticInOut,
                                    Box::new(ScaleBy(dt * 5.0, -0.005, -0.005)))));
