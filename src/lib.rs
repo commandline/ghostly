@@ -24,6 +24,7 @@ pub struct Game {
     stars: Vec<Star>,
     diag: bool,
     victory: bool,
+    loss: bool,
 }
 
 impl Game {
@@ -40,16 +41,22 @@ impl Game {
             stars: stars,
             diag: false,
             victory: false,
+            loss: false,
         }
     }
 
     pub fn on_update(&mut self, e: &Input, upd: UpdateArgs, w: &PistonWindow) {
+        if self.victory || self.loss {
+            return;
+        }
         self.scene.event(e);
 
+        let mut grew = false;
         for mut star in &mut self.stars {
             if !star.destroyed && self.player.collides(&star) {
                 star.destroy(&mut self.scene, upd.dt);
                 self.player.grow(&mut self.scene, upd.dt);
+                grew = true;
             } else {
                 star.mov(w, &mut self.scene, upd.dt);
             }
@@ -57,10 +64,19 @@ impl Game {
 
         if self.stars.iter().all(|star| star.destroyed) {
             self.victory = true;
+            self.loss = false;
             return;
         }
 
-        self.player.mov(w, &mut self.scene, upd.dt);
+        if !grew {
+            self.player.shrink(&mut self.scene, upd.dt);
+        }
+        if self.player.size > 0 {
+            self.player.mov(w, &mut self.scene, upd.dt);
+        } else  {
+            self.loss = true;
+            self.victory = false;
+        }
     }
 
     pub fn on_draw(&mut self, e: &Input, _: RenderArgs, w: &mut PistonWindow) {
@@ -87,6 +103,14 @@ impl Game {
             if self.victory {
                 text::Text::new_color([0.0, 1.0, 0.0, 1.0], 24).draw(
                     "Hurray! You win!",
+                    &mut glyphs,
+                    &c.draw_state,
+                    c.transform.trans(200.0, 240.0), g
+                );
+                return;
+            } else if self.loss {
+                text::Text::new_color([0.0, 1.0, 0.0, 1.0], 24).draw(
+                    "Aw! You lose!",
                     &mut glyphs,
                     &c.draw_state,
                     c.transform.trans(200.0, 240.0), g
