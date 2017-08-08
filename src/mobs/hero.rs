@@ -15,11 +15,20 @@ pub struct Hero {
     pub dir: (f64, f64),
     pub x: f64,
     pub y: f64,
-    pub size: u32,
+    pub size: f64,
     w: f64,
     h: f64,
     collider: Cuboid2<f64>,
 }
+
+const BASE_SIZE: f64 = 500.0;
+const GROWTH_FACTOR: f64 = 50.0;
+const SHRINK_FACTOR: f64 = 1.0;
+
+const GROW_SHRINK_DUR: f64 = 5.0;
+const MOVE_DUR: f64 = 0.75;
+
+const ACCEL: f64 = 2.0;
 
 impl Hero {
     pub fn new(w: &mut PistonWindow, scene: &mut Scene<Texture<Resources>>) -> Hero {
@@ -42,7 +51,7 @@ impl Hero {
             h: bounds[3],
             dir: (0.0, 0.0),
             sprite_id: sprite_id,
-            size: 2000,
+            size: BASE_SIZE,
             collider: Cuboid2::new(Vector2::new(bounds[2], bounds[3])),
         }
     }
@@ -63,38 +72,38 @@ impl Hero {
                 sprite.set_position(self.x, self.y);
             }
         }
-        let mov_x = self.dir.0 * 2.0;
-        let mov_y = self.dir.1 * 2.0;
+        let mov_x = self.dir.0 * ACCEL;
+        let mov_y = self.dir.1 * ACCEL;
         scene.run(self.sprite_id,
                   &Action(Ease(EaseFunction::CubicOut,
-                               Box::new(MoveBy(dt * 0.75, mov_x, mov_y)))));
+                               Box::new(MoveBy(dt * MOVE_DUR, mov_x, mov_y)))));
     }
 
     pub fn grow(&mut self, scene: &mut Scene<Texture<Resources>>, dt: f64) {
+        self.size += GROWTH_FACTOR;
+        scene.run(self.sprite_id,
+                  &Action(Ease(EaseFunction::ElasticInOut,
+                               Box::new(ScaleTo(dt * GROW_SHRINK_DUR, self.size / BASE_SIZE, self.size / BASE_SIZE)))));
         if let Some(sprite) = scene.child(self.sprite_id) {
-            self.size += 60;
             let bounds = sprite.bounding_box();
             self.w = bounds[2];
             self.h = bounds[3];
             self.collider = Cuboid2::new(Vector2::new(bounds[2], bounds[3]));
         }
-        scene.run(self.sprite_id,
-                  &Action(Ease(EaseFunction::ElasticInOut,
-                               Box::new(ScaleBy(dt * 5.0, 0.3, 0.3)))));
     }
 
     pub fn shrink(&mut self, scene: &mut Scene<Texture<Resources>>, dt: f64) {
-        if self.size > 0 {
+        if self.size > 0.0 {
+                self.size -= SHRINK_FACTOR;
+            scene.run(self.sprite_id,
+                      &Action(Ease(EaseFunction::ElasticInOut,
+                                   Box::new(ScaleTo(dt * GROW_SHRINK_DUR, self.size / BASE_SIZE, self.size / BASE_SIZE)))));
             if let Some(sprite) = scene.child(self.sprite_id) {
-                self.size -= 1;
                 let bounds = sprite.bounding_box();
                 self.w = bounds[2];
                 self.h = bounds[3];
                 self.collider = Cuboid2::new(Vector2::new(bounds[2], bounds[3]));
             }
-            scene.run(self.sprite_id,
-                      &Action(Ease(EaseFunction::ElasticInOut,
-                                   Box::new(ScaleBy(dt * 5.0, -0.005, -0.005)))));
         }
     }
 
