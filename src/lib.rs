@@ -34,8 +34,14 @@ impl Game {
     pub fn new(w: &mut PistonWindow) -> Game {
         let mut scene = Scene::new();
         let mut stars: Vec<Star> = vec![];
-        for _ in 1..7 {
-            stars.push(Star::new(w, &mut scene));
+        for number in 1..7 {
+            let color = match number % 4 {
+                1 => "yellow",
+                2 => "green",
+                3 => "blue",
+                _ => "pink",
+            };
+            stars.push(Star::new(color, w, &mut scene));
         }
         let player = Hero::new(w, &mut scene);
         Game {

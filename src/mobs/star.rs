@@ -19,23 +19,23 @@ pub struct Star {
     dir: u32,
     pub collider: Cuboid2<f64>,
     pub destroyed: bool,
+    accel: f64,
 }
 
 const DESIGNED_FOR_WIDTH: f64 = 640.0;
 
 const SCALE_FACTOR: f64 = 0.5;
-const ACCEL: f64 = 2.0;
 
 const MOVE_DUR: f64 = 0.75;
 const DESTROY_DUR: f64 = 0.75;
 
 impl Star {
-    pub fn new(w: &mut PistonWindow, scene: &mut Scene<Texture<Resources>>) -> Star {
+    pub fn new(color: &str, w: &mut PistonWindow, scene: &mut Scene<Texture<Resources>>) -> Star {
         let assets = find_folder::Search::ParentsThenKids(3, 3)
             .for_folder("assets")
             .unwrap();
         let tex = Rc::new(Texture::from_path(&mut w.factory,
-                                             assets.join("star.png"),
+                                             assets.join(format!("{}_star.png", color)),
                                              Flip::None,
                                              &TextureSettings::new())
             .unwrap());
@@ -43,6 +43,12 @@ impl Star {
         let x = rand_pos(width as f64);
         let y = rand_pos(height as f64);
         let scale = width as f64 / DESIGNED_FOR_WIDTH * SCALE_FACTOR;
+        let accel = match color {
+            "yellow" => 3.0,
+            "blue" => 1.0,
+            "green" => 2.0,
+            _ => 2.0,
+        };
         let mut sprite = Sprite::from_texture(tex);
         sprite.set_scale(scale, scale);
         sprite.set_position(x, y);
@@ -57,6 +63,7 @@ impl Star {
             dir: rand_dir(),
             collider: Cuboid2::new(Vector2::new(bounds[2], bounds[3])),
             destroyed: false,
+            accel: accel,
         }
     }
 
@@ -81,8 +88,8 @@ impl Star {
         }
         self.dir = rand_turn(self.dir);
         let dir = lookup_dir(self.dir);
-        let mov_x = ACCEL * dir.0;
-        let mov_y = ACCEL * dir.1;
+        let mov_x = self.accel * dir.0;
+        let mov_y = self.accel * dir.1;
         scene.run(self.sprite_id,
                   &Action(Ease(EaseFunction::CubicOut,
                                Box::new(MoveBy(dt * MOVE_DUR, mov_x, mov_y)))));
