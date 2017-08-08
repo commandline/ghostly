@@ -6,14 +6,14 @@ A simple 2D game inspired by the soot yokai in Tonari ni Totoro and Spirited Awa
 * [X] Wrap sprite movement at the edges.
 * [X] Add mobs.
 * [ ] Add a start screen.
-* [ ] Add different color candies.
+* [x] Add different color candies.
 * [ ] Add animations to candies.
 * [ ] Decide on different behaviors for different candies.
 * [ ] Add boss, dust broom.
-* [ ] Polish assets.
+* [x] Polish assets.
 * [ ] Break up hero and boss sprite to use animated sub-sprites.
 * [ ] Implement slow down after growing.
 * [ ] Implement return to size after short wait.
-* [ ] Decide on whether hero should always be slowly shrinking.
+* [x] Decide on whether hero should always be slowly shrinking.
 * [ ] Add levels of increasing difficulty.
 * [ ] Add options screen and multiple resolution.
