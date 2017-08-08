@@ -32,7 +32,7 @@ impl Game {
     pub fn new(w: &mut PistonWindow) -> Game {
         let mut scene = Scene::new();
         let mut stars: Vec<Star> = vec![];
-        for _ in 1..5 {
+        for _ in 1..7 {
             stars.push(Star::new(w, &mut scene));
         }
         let player = Hero::new(w, &mut scene);
