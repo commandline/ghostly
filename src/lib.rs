@@ -23,6 +23,7 @@ pub struct Game {
     player: Hero,
     stars: Vec<Star>,
     diag: bool,
+    pause: bool,
     victory: bool,
     loss: bool,
 }
@@ -40,13 +41,14 @@ impl Game {
             player: player,
             stars: stars,
             diag: false,
+            pause: false,
             victory: false,
             loss: false,
         }
     }
 
     pub fn on_update(&mut self, e: &Input, upd: UpdateArgs, w: &PistonWindow) {
-        if self.victory || self.loss {
+        if self.pause || self.victory || self.loss {
             return;
         }
         self.scene.event(e);
@@ -167,6 +169,9 @@ impl Game {
                     }
                     Button::Keyboard(Key::H) => {
                         self.diag = !self.diag;
+                    }
+                    Button::Keyboard(Key::P) => {
+                        self.pause = !self.pause;
                     }
                     _ => {}
                 }
