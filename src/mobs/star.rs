@@ -21,6 +21,14 @@ pub struct Star {
     pub destroyed: bool,
 }
 
+const DESIGNED_FOR_WIDTH: f64 = 640.0;
+
+const SCALE_FACTOR: f64 = 0.5;
+const ACCEL: f64 = 2.0;
+
+const MOVE_DUR: f64 = 0.75;
+const DESTROY_DUR: f64 = 0.75;
+
 impl Star {
     pub fn new(w: &mut PistonWindow, scene: &mut Scene<Texture<Resources>>) -> Star {
         let assets = find_folder::Search::ParentsThenKids(3, 3)
@@ -30,15 +38,19 @@ impl Star {
                                              assets.join("star.png"),
                                              Flip::None,
                                              &TextureSettings::new())
-                                  .unwrap());
+            .unwrap());
+        let Size { width, height } = w.size();
+        let x = rand_pos(width as f64);
+        let y = rand_pos(height as f64);
+        let scale = width as f64 / DESIGNED_FOR_WIDTH * SCALE_FACTOR;
         let mut sprite = Sprite::from_texture(tex);
-        sprite.set_scale(0.5, 0.5);
-        sprite.set_position(30.0, 32.0);
+        sprite.set_scale(scale, scale);
+        sprite.set_position(x, y);
         let bounds = sprite.bounding_box();
         let sprite_id = scene.add_child(sprite);
         Star {
-            x: 32.0,
-            y: 32.0,
+            x: x,
+            y: y,
             w: bounds[2],
             h: bounds[3],
             sprite_id: sprite_id,
@@ -57,7 +69,9 @@ impl Star {
             self.x = sprite_x;
             self.y = sprite_y;
         }
-        let (wrapped, new_x, new_y) = wrap((w.size().width.into(), w.size().height.into()), (self.w, self.h), (self.x, self.y));
+        let (wrapped, new_x, new_y) = wrap((w.size().width.into(), w.size().height.into()),
+                                           (self.w, self.h),
+                                           (self.x, self.y));
         if wrapped {
             if let Some(ref mut sprite) = scene.child_mut(self.sprite_id) {
                 self.x = new_x;
@@ -67,13 +81,16 @@ impl Star {
         }
         self.dir = rand_turn(self.dir);
         let dir = lookup_dir(self.dir);
-        let mov_x = 2.0 * dir.0;
-        let mov_y = 2.0 * dir.1;
-        scene.run(self.sprite_id, &Action(Ease(EaseFunction::CubicOut, Box::new(MoveBy(dt * 0.75, mov_x, mov_y)))));
+        let mov_x = ACCEL * dir.0;
+        let mov_y = ACCEL * dir.1;
+        scene.run(self.sprite_id,
+                  &Action(Ease(EaseFunction::CubicOut,
+                               Box::new(MoveBy(dt * MOVE_DUR, mov_x, mov_y)))));
     }
 
     pub fn destroy(&mut self, scene: &mut Scene<Texture<Resources>>, dt: f64) {
-        scene.run(self.sprite_id, &Action(Ease(EaseFunction::CubicOut, Box::new(FadeOut(dt * 0.75)))));
+        scene.run(self.sprite_id,
+                  &Action(Ease(EaseFunction::CubicOut, Box::new(FadeOut(dt * DESTROY_DUR)))));
         self.destroyed = true;
     }
 }
@@ -82,23 +99,15 @@ fn rand_dir() -> u32 {
     rand::random::<u32>() % 8
 }
 
+fn rand_pos(dim: f64) -> f64 {
+    (rand::random::<f64>() % dim).abs()
+}
+
 fn rand_turn(dir: u32) -> u32 {
     let coin = rand::random::<i32>() % 10;
     match coin {
-        -9 => {
-            if dir == 0 {
-                7
-            } else {
-                dir - 1
-            }
-        }
-        9 => {
-            if dir == 7 {
-                0
-            } else {
-                dir + 1
-            }
-        }
+        -9 => if dir == 0 { 7 } else { dir - 1 },
+        9 => if dir == 7 { 0 } else { dir + 1 },
         _ => dir,
     }
 }

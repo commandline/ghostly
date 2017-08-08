@@ -28,6 +28,8 @@ pub struct Game {
     loss: bool,
 }
 
+const TILE_SIZE: u32 = 64;
+
 impl Game {
     pub fn new(w: &mut PistonWindow) -> Game {
         let mut scene = Scene::new();
@@ -73,7 +75,7 @@ impl Game {
         if !grew {
             self.player.shrink(&mut self.scene, upd.dt);
         }
-        if self.player.size > 0 {
+        if self.player.size > 0.0 {
             self.player.mov(w, &mut self.scene, upd.dt);
         } else  {
             self.loss = true;
@@ -89,33 +91,37 @@ impl Game {
         let factory = w.factory.clone();
         let mut glyphs = Glyphs::new(font, factory).unwrap();
 
-        let image = Image::new().rect(square(0.0, 0.0, 640.0));
+        let Size { height, width } = w.size();
+        let image = Image::new().rect(square(0.0, 0.0, width as f64));
         let bg = Texture::from_path(&mut w.factory,
                                        assets.join("bg.png"),
                                        Flip::None,
                                        &TextureSettings::new()).unwrap();
         w.draw_2d(e, |c, g| {
             clear([1.0, 1.0, 1.0, 1.0], g);
-            for number in 0..100 {
-                let x: f64 = (number % 10 * 64).into();
-                let y: f64 = (number / 10 * 64).into();
-                image.draw(&bg, &Default::default(), c.transform.trans(x, y).zoom(0.1), g);
+            let cols = width / TILE_SIZE;
+            // 4:3 means rows will be fractional so add one to cover completely
+            let tile_count = cols * (height / TILE_SIZE + 1);
+            for number in 0..tile_count {
+                let x: f64 = (number % cols * TILE_SIZE).into();
+                let y: f64 = (number / cols * TILE_SIZE).into();
+                image.draw(&bg, &Default::default(), c.transform.trans(x, y).zoom(1.0 / cols as f64), g);
             }
 
             if self.victory {
-                text::Text::new_color([0.0, 1.0, 0.0, 1.0], 24).draw(
+                text::Text::new_color([0.0, 1.0, 0.0, 1.0], height / 10).draw(
                     "Hurray! You win!",
                     &mut glyphs,
                     &c.draw_state,
-                    c.transform.trans(200.0, 240.0), g
+                    c.transform.trans(width as f64 / 2.0 - width as f64 / 4.5, height as f64 / 2.0), g
                 );
                 return;
             } else if self.loss {
-                text::Text::new_color([0.0, 1.0, 0.0, 1.0], 24).draw(
+                text::Text::new_color([0.0, 1.0, 0.0, 1.0], height / 10).draw(
                     "Aw! You lose!",
                     &mut glyphs,
                     &c.draw_state,
-                    c.transform.trans(200.0, 240.0), g
+                    c.transform.trans(width as f64 / 2.0 - width as f64 / 4.5, height as f64 / 2.0), g
                 );
                 return;
             }

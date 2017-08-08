@@ -21,9 +21,11 @@ pub struct Hero {
     collider: Cuboid2<f64>,
 }
 
+const DESIGNED_FOR_WIDTH: f64 = 640.0;
+
 const BASE_SIZE: f64 = 500.0;
 const GROWTH_FACTOR: f64 = 50.0;
-const SHRINK_FACTOR: f64 = 1.0;
+const SHRINK_FACTOR: f64 = 0.5;
 
 const GROW_SHRINK_DUR: f64 = 5.0;
 const MOVE_DUR: f64 = 0.75;
@@ -41,12 +43,17 @@ impl Hero {
                                              &TextureSettings::new())
             .unwrap());
         let mut sprite = Sprite::from_texture(tex);
-        sprite.set_position(320.0, 240.0);
+        let Size { width, height } = w.size();
+        let x = width as f64 / 2.0;
+        let y = height as f64 / 2.0;
+        let scale = width as f64 / DESIGNED_FOR_WIDTH;
+        sprite.set_position(x, y);
+        sprite.set_scale(scale, scale);
         let bounds = sprite.bounding_box();
         let sprite_id = scene.add_child(sprite);
         Hero {
-            x: 320.0,
-            y: 240.0,
+            x: x,
+            y: y,
             w: bounds[2],
             h: bounds[3],
             dir: (0.0, 0.0),
